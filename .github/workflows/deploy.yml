@@ -1,0 +1,41 @@
+# main ブランチへのマージ時に HelloCloud Serverless (Modal SDK 互換) へ自動デプロイする。
+# 事前に GitHub リポジトリの Secrets に MODAL_TOKEN_ID / MODAL_TOKEN_SECRET (HelloCloud の API キー) と
+# MODAL_SERVER_URL (HelloCloud の API サーバーの URL) を登録しておく。MODAL_SERVER_URL が未登録なら Modal にデプロイする。
+# MODAL_TOKEN_ID / MODAL_TOKEN_SECRET が未登録の場合はデプロイをスキップする (fork でも失敗しないように)。
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      MODAL_SERVER_URL: ${{ secrets.MODAL_SERVER_URL }}
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+    steps:
+      - name: Check credentials
+        id: creds
+        run: |
+          if [ -z "$MODAL_TOKEN_ID" ] || [ -z "$MODAL_TOKEN_SECRET" ]; then
+            echo "MODAL_TOKEN_ID / MODAL_TOKEN_SECRET が未登録のためデプロイをスキップしました" >> "$GITHUB_STEP_SUMMARY"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.creds.outputs.skip != 'true'
+      - uses: actions/setup-python@v5
+        if: steps.creds.outputs.skip != 'true'
+        with:
+          python-version: "3.11"
+      - name: Install Modal SDK
+        if: steps.creds.outputs.skip != 'true'
+        run: pip install -r requirements.txt
+      - name: Deploy
+        if: steps.creds.outputs.skip != 'true'
+        run: |
+          # 空の MODAL_SERVER_URL は SDK がそのまま使ってしまうので、未登録なら外して Modal にデプロイする
+          if [ -z "$MODAL_SERVER_URL" ]; then unset MODAL_SERVER_URL; fi
+          modal deploy app.py
