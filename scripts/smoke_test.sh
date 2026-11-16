@@ -4,7 +4,7 @@
 #   export COUNT_API_URL=<modal deploy で表示された URL>
 #   export COUNT_API_TOKEN=<Secret grounding-dino-dinov2-api の COUNT_API_TOKEN の値>
 #   bash scripts/smoke_test.sh                         # COCO のサンプル画像 (猫2匹+リモコン2個) で実行
-#   bash scripts/smoke_test.sh shelf.jpg "a bottle"    # 手元の画像とプロンプトで実行
+#   bash scripts/smoke_test.sh shelf.jpg "a cardboard box"   # 手元の画像とプロンプトで実行 (shelf.jpg の取得方法は README)
 #
 # 必要なもの: curl と python3 (JSON の整形用)。macOS なら sips でお手本画像を切り出すテストも行う。
 set -euo pipefail

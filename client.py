@@ -4,8 +4,9 @@
   pip install requests
   export COUNT_API_URL=<modal deploy で表示された URL>
   export COUNT_API_TOKEN=<modal secret に入れた値>
+  curl -fL -o shelf.jpg https://upload.wikimedia.org/wikipedia/commons/4/46/Gold_Medal_Taiwan_Beer_paper_boxes_20150206.jpg
   python client.py --image shelf.jpg --prompt "a cardboard box"
-  python client.py --image shelf.jpg --prompt "a bottle" --reference exemplar.jpg
+  python client.py --image shelf.jpg --prompt "a cardboard box" --reference exemplar.jpg
 """
 
 import argparse
