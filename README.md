@@ -53,6 +53,14 @@ export MODAL_TOKEN_SECRET=<API キーのシークレット>
 
 **Modal の場合**: `modal setup` でログインします (`MODAL_SERVER_URL` は設定しません)。
 
+以降の例で使う `shelf.jpg` は、棚に段ボール箱が並んだサンプル画像です
+([Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gold_Medal_Taiwan_Beer_paper_boxes_20150206.jpg)、CC BY-SA 4.0)。
+リポジトリには含めていないので、最初にダウンロードします。
+
+```bash
+curl -fL -o shelf.jpg https://upload.wikimedia.org/wikipedia/commons/4/46/Gold_Medal_Taiwan_Beer_paper_boxes_20150206.jpg
+```
+
 ### 1. Bearer トークンを Secret に登録
 
 ```bash
@@ -68,11 +76,11 @@ modal run app.py
 
 初回はイメージをビルドします (PyTorch の取得と重みの同梱)。その後サンプル画像
 (COCO val2017 の猫 2 匹 + リモコン 2 個) を SDK 経由で 2 回推論し、コールド → ウォームの応答時間と結果を表示します。
-手元の画像で試す場合:
+棚のサンプル画像や手元の画像で試す場合:
 
 ```bash
 modal run app.py --image shelf.jpg --prompt "a cardboard box"
-modal run app.py --image shelf.jpg --prompt "a bottle" --reference exemplar.jpg   # お手本で絞り込み
+modal run app.py --image shelf.jpg --prompt "a cardboard box" --reference exemplar.jpg   # お手本で絞り込み (exemplar.jpg は手元で用意)
 ```
 
 ### 3. 常設デプロイ
@@ -81,7 +89,10 @@ modal run app.py --image shelf.jpg --prompt "a bottle" --reference exemplar.jpg 
 modal deploy app.py
 ```
 
-`POST /count` を受ける URL が表示されます (Modal では `https://<workspace>--grounding-dino-dinov2-countmodel-serve.modal.run` の形)。
+`POST /count` を受ける URL が表示されます。HelloCloud Serverless では
+`https://<プロジェクト>--grounding-dino-dinov2-countmod-<ハッシュ>.<ドメイン>`、
+Modal では `https://<workspace>--grounding-dino-dinov2-countmodel-serve.modal.run` の形です。
+コンソール (管理画面) でプロジェクトを開いたときのブラウザの URL は、API の URL ではありません。
 既定では 0 台まで縮退するので、アイドル中は GPU 課金が発生しません。止めるときは `modal app stop grounding-dino-dinov2` です。
 
 ### 4. API を呼ぶ
@@ -89,14 +100,20 @@ modal deploy app.py
 ```bash
 export COUNT_API_URL=<3. で表示された URL>
 export COUNT_API_TOKEN=<1. で Secret に入れた値>
-python client.py --image shelf.jpg --prompt "a cardboard box"
+python client.py --image shelf.jpg --prompt "a cardboard box"   # count=14
+```
+
+URL が分からなくなった場合は SDK で取得できます。
+
+```bash
+export COUNT_API_URL=$(python -c 'import modal; print(modal.Cls.from_name("grounding-dino-dinov2", "CountModel")().serve.get_web_url())')
 ```
 
 まとめて疎通確認する場合 (コールド/ウォーム、お手本画像、health、401 を順に実行):
 
 ```bash
-bash scripts/smoke_test.sh                          # サンプル画像で実行
-bash scripts/smoke_test.sh shelf.jpg "a bottle"     # 手元の画像で実行
+bash scripts/smoke_test.sh                                  # COCO のサンプル画像で実行
+bash scripts/smoke_test.sh shelf.jpg "a cardboard box"      # 棚のサンプル画像や手元の画像で実行
 ```
 
 curl の場合:
@@ -171,3 +188,5 @@ PyTorch のバージョンを変える場合も `TORCH_INDEX_URL` は `cu128` �
 
 使用しているモデルは `IDEA-Research/grounding-dino-tiny`、`facebook/dinov2-small` ともに Apache-2.0 です。
 サンプル画像は COCO val2017 の画像を実行時にダウンロードして使います (リポジトリには含みません)。
+`shelf.jpg` は [Gold Medal Taiwan Beer paper boxes 20150206.jpg](https://commons.wikimedia.org/wiki/File:Gold_Medal_Taiwan_Beer_paper_boxes_20150206.jpg)
+(Solomon203、Wikimedia Commons、[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)) で、こちらもリポジトリには含みません。
